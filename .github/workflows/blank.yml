@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  push:
+    branches-ignore: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+    types: [closed]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: get token
+        id: get_token
+        uses: tibdex/github-app-token@v1
+        with:
+          app_id: ${{ secrets.APP_ID }}
+          private_key: ${{ secrets.APP_PEM }}
+
+      - name: checkout
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          token: ${{ steps.get_token.outputs.token }}
+
+      - name: push updates
+        shell: pwsh
+        run: |         
+          echo "${{ github.run_id }}" > test.log
+          git config user.email "${{ secrets.APP_ID }}+uio-git-app[bot]@users.noreply.github.com"
+          git config user.name "${{ secrets.APP_ID }}+uio-git-app[bot]"
+          git add .
+          git commit -m "Test commit - add ${{ github.run_id }}"
+          git push
